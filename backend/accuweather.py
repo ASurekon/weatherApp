@@ -46,6 +46,16 @@ async def get_weather_by_city_id(city_id: int):
         return response.json()
 
 
+async def forecast7days(city_id: int):
+    async with httpx.AsyncClient() as client:
+        response = await client.get(
+            url=f"https://dataservice.accuweather.com/forecasts/v1/daily/7day/{city_id}",
+            headers={
+                "Authorization": auth_param
+            })
+        return response.json()
+
+
 async def main():
     # result = await get_city(city_name="Moscow")
     result = await get_weather_by_city_name(city_name="Moscow")

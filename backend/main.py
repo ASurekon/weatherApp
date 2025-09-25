@@ -43,10 +43,25 @@ def get_cached_weather_redis(city: str) -> Optional[dict]:
         return json.loads(cached)
     return None
 
+def get_cached_forecast_redis(city: str) -> Optional[dict]:
+    """Получить погоду из кэша Redis"""
+    cached = redis_client.get(f"forecast:{city.lower()}")
+    if cached:
+        return json.loads(cached)
+    return None
+
 def set_cached_weather_redis(city: str, data: dict, expire: int = 300):
     """Сохранить погоду в кэш Redis"""
     redis_client.setex(
         f"weather:{city.lower()}",
+        expire,
+        json.dumps(data)
+    )
+
+def set_cached_forecast_redis(city: str, data: dict, expire: int = 300):
+    """Сохранить погоду в кэш Redis"""
+    redis_client.setex(
+        f"forecast:{city.lower()}",
         expire,
         json.dumps(data)
     )
@@ -59,6 +74,7 @@ def get_or_create_user_id(request: Request, response: Response) -> str:
         user_id = str(uuid.uuid4())
         response.set_cookie(key="user_id", value=user_id, max_age=86400 * 30)
     return user_id
+
 
 @app.get("/")
 async def home(request: Request, response: Response):
@@ -121,6 +137,7 @@ async def get_weather(city: str, request: Request, response: Response):
         "user_cities": get_user_cities(user_id)
     }
 
+
 @app.get("/weather")
 async def get_weather_all(request: Request, response: Response):
     user_id = get_or_create_user_id(request, response)
@@ -141,6 +158,7 @@ async def get_user_cities_route(request: Request, response: Response):
     user_id = get_or_create_user_id(request, response)
     return {"cities": get_user_cities(user_id)}
 
+
 @app.delete("/user/cities/{city}")
 async def remove_city(city: str, request: Request, response: Response):
     """Удалить город из списка пользователя"""
@@ -156,7 +174,16 @@ async def remove_city(city: str, request: Request, response: Response):
     return {"message": "Город удален", "cities": cities}
 
 
-
+@app.get("/forecast/7day/{city}")
+async def get_forecast7day(city: str, request: Request, response: Response):
+    user_id = get_or_create_user_id(request=request, response=response)
+    cities = get_user_cities(user_id)
+    if city in cities:
+        forecast = get_cached_forecast_redis(city)
+        if not forecast:
+            res = await get_forecast7day(city)
+            return res
+        return forecast
 
 
 
