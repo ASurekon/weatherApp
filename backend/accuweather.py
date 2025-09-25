@@ -11,7 +11,8 @@ API_KEY = os.getenv("API_KEY_ACCUWEATHER")
 auth_param = f"Bearer {API_KEY}"
 
 
-async def get_city(city_name: str):
+async def get_city(city_name: str) -> int:
+    """Получить locationKey города по названию для Accuweather API"""
     async with httpx.AsyncClient() as client:
         response = await client.get(
             url=f"https://dataservice.accuweather.com/locations/v1/cities/search?q={city_name}",
@@ -46,10 +47,11 @@ async def get_weather_by_city_id(city_id: int):
         return response.json()
 
 
-async def forecast7days(city_id: int):
+async def forecast5days(city_id: int):
+    """Получить прогноз погоды города по названию"""
     async with httpx.AsyncClient() as client:
         response = await client.get(
-            url=f"https://dataservice.accuweather.com/forecasts/v1/daily/7day/{city_id}",
+            url=f"https://dataservice.accuweather.com/forecasts/v1/daily/5day/{city_id}",
             headers={
                 "Authorization": auth_param
             })
